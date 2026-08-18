@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attorney Scout — Know Who to Call Before You Dial</title>
+<meta name="description" content="Attorney Scout grades law firm prospects A through F based on marketing spend and online presence, delivered to your Google Sheet every morning.">
+<style>
+  :root{
+    --navy:#0A1628; --navy-deep:#060F1C; --blue:#2E6BFF; --blue-dark:#1B4FD6;
+    --blue-2:#4A80FF; --blue-3:#7BA3FF; --ink:#0A1628; --muted:#55647A; --muted-2:#7787A0;
+    --line:#E4E9F2; --wash:#F5F8FD;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:#fff;color:var(--ink);font-family:"Helvetica Neue",Helvetica,"Segoe UI",system-ui,Arial,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{color:var(--blue-dark)}
+  h1,h2,h3{margin:0;letter-spacing:-0.03em;font-weight:700}
+  p{margin:0}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+  .sec{padding:clamp(64px,8vw,104px) 0}
+  .h2{font-size:clamp(30px,3.6vw,44px);line-height:1.1;margin-bottom:12px}
+  .lede{color:var(--muted);font-size:17px;max-width:560px;margin-bottom:clamp(34px,5vw,52px)}
+  .mono{font-family:var(--mono)}
+
+  /* header */
+  header{position:sticky;top:0;z-index:20;background:rgba(6,15,28,.92);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,.08)}
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:16px 24px;max-width:1180px;margin:0 auto}
+  .logo{display:flex;align-items:center;gap:10px;color:#fff;font-size:17px;font-weight:700;letter-spacing:-.02em}
+  .mark{width:22px;height:22px;border-radius:6px;background:var(--blue)}
+  nav.links{display:flex;gap:28px}
+  nav.links a{color:rgba(255,255,255,.66);font-size:14px;font-weight:500}
+  nav.links a:hover{color:#fff}
+  .btn{display:inline-block;background:var(--blue);color:#fff;font-weight:600;border-radius:10px;padding:16px 28px;font-size:16px;transition:transform .16s ease,background .16s ease,box-shadow .16s ease}
+  .btn:hover{background:var(--blue-dark);color:#fff;transform:translateY(-2px);box-shadow:0 14px 32px rgba(46,107,255,.4)}
+  .btn.sm{padding:11px 18px;font-size:14px;border-radius:8px}
+  .btn.sm:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(46,107,255,.35)}
+  .btn.block{display:block;text-align:center;font-size:16.5px;padding:17px 24px}
+  .ghost{color:#fff;font-size:16px;font-weight:500;padding:16px 4px;border-bottom:1px solid rgba(255,255,255,.3);transition:border-color .16s ease}
+  .ghost:hover{color:#fff;border-bottom-color:var(--blue)}
+
+  /* hero */
+  .hero{background:var(--navy-deep);background-image:radial-gradient(900px 420px at 78% -8%,rgba(46,107,255,.22),transparent 70%);border-bottom:1px solid rgba(255,255,255,.07)}
+  .hero .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:clamp(40px,6vw,72px);align-items:center;padding:clamp(56px,9vw,118px) 0 clamp(64px,8vw,104px)}
+  .pill{display:inline-flex;align-items:center;gap:9px;padding:6px 13px 6px 10px;border:1px solid rgba(46,107,255,.4);background:rgba(46,107,255,.1);border-radius:999px;margin-bottom:26px}
+  .pill span:first-child{width:7px;height:7px;border-radius:50%;background:var(--blue)}
+  .pill span:last-child{color:#8FB4FF;font-size:12.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  h1{color:#fff;font-size:clamp(38px,5.6vw,62px);line-height:1.04;letter-spacing:-.035em;margin-bottom:22px;text-wrap:balance}
+  .hero p.sub{color:rgba(255,255,255,.72);font-size:clamp(16px,1.5vw,19px);line-height:1.6;max-width:560px;margin-bottom:34px;text-wrap:pretty}
+  .cta-row{display:flex;flex-wrap:wrap;align-items:center;gap:18px}
+  .panel{border:1px solid rgba(255,255,255,.12);border-radius:16px;background:rgba(255,255,255,.04);padding:26px 26px 30px;box-shadow:0 30px 70px rgba(0,0,0,.45)}
+  .panel-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:22px}
+  .panel-head b{color:#fff;font-size:14px}
+  .panel-head span{color:rgba(255,255,255,.45);font-size:12px}
+  .bars{display:flex;flex-direction:column;gap:14px}
+  .bar-row{display:flex;align-items:center;gap:14px}
+  .bar-row .g{width:30px;color:#fff;font-size:13px;font-weight:700;font-family:var(--mono)}
+  .track{flex:1;height:10px;border-radius:999px;background:rgba(255,255,255,.09);overflow:hidden}
+  .fill{height:100%;background:var(--blue)}
+  .bar-row .n{width:34px;text-align:right;color:rgba(255,255,255,.6);font-size:12.5px;font-family:var(--mono)}
+  .panel-foot{margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,.1);display:flex;gap:26px;flex-wrap:wrap}
+  .panel-foot b{display:block;color:#fff;font-size:22px;font-weight:700;letter-spacing:-.02em}
+  .panel-foot small{display:block;color:rgba(255,255,255,.5);font-size:12px;margin-top:3px}
+
+  /* steps */
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+  .step{border:1px solid var(--line);border-radius:14px;padding:30px 26px 32px;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+  .step:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(10,22,40,.09);border-color:#C9D6EE}
+  .step .num{width:46px;height:46px;border-radius:12px;background:rgba(46,107,255,.1);color:var(--blue);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;margin-bottom:22px}
+  .step h3{font-size:20px;letter-spacing:-.02em;margin-bottom:10px}
+  .step p{color:var(--muted);font-size:15.5px;line-height:1.6}
+
+  /* grades */
+  .grades{background:var(--wash);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .glist{display:flex;flex-direction:column;gap:12px}
+  .grade{display:grid;grid-template-columns:74px 1fr;gap:clamp(16px,3vw,30px);align-items:start;background:#fff;border:1px solid #E1E8F4;border-left:3px solid var(--blue);border-radius:12px;padding:22px 24px;transition:transform .17s ease,box-shadow .17s ease}
+  .grade:hover{transform:translateY(-3px) scale(1.006);box-shadow:0 16px 34px rgba(10,22,40,.1)}
+  .grade .letter{font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1;color:var(--blue)}
+  .grade b{display:block;font-size:16.5px;font-weight:600;margin-bottom:5px}
+  .grade span.d{color:var(--muted);font-size:15px}
+  .g-a{border-left-color:var(--blue-2)} .g-a .letter{color:var(--blue-2)}
+  .g-bp{border-left-color:var(--blue-3)} .g-bp .letter{color:var(--blue-3)}
+  .g-b{border-left-color:#A9BEDD} .g-b .letter{color:var(--muted-2)}
+  .g-cp{border-left-color:#CBD5E5} .g-cp .letter{color:var(--muted-2)}
+  .callout{margin-top:28px;background:var(--navy);border-radius:12px;padding:26px 28px;display:flex;align-items:center;gap:18px}
+  .dot{flex:0 0 auto;width:10px;height:10px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 6px rgba(46,107,255,.2)}
+  .callout p{color:rgba(255,255,255,.86);font-size:16px;line-height:1.55}
+
+  /* sheet */
+  .sheet{border:1px solid #D9E1EF;border-radius:12px;overflow:hidden;box-shadow:0 20px 50px rgba(10,22,40,.1)}
+  .sheet-bar{background:#F1F4F9;border-bottom:1px solid #D9E1EF;padding:12px 16px;display:flex;align-items:center;gap:12px}
+  .sheet-bar .dots{display:flex;gap:7px}
+  .sheet-bar .dots i{width:11px;height:11px;border-radius:50%;background:#E2E6EE;display:block}
+  .sheet-bar b{font-size:13px;color:#2C3A50}
+  .sheet-bar time{font-size:12px;color:var(--muted-2);margin-left:auto;font-family:var(--mono)}
+  .scroll{overflow-x:auto;background:#fff}
+  table{width:100%;min-width:940px;border-collapse:collapse;font-size:13.5px}
+  thead tr{background:var(--navy)}
+  th{text-align:left;color:#fff;font-weight:600;font-size:12px;letter-spacing:.04em;text-transform:uppercase;padding:13px 14px;white-space:nowrap}
+  td{padding:13px 14px;color:var(--muted);white-space:nowrap}
+  tbody tr{border-bottom:1px solid #EDF1F7}
+  tbody tr:nth-child(even){background:#F7F9FC}
+  tbody tr:last-child{border-bottom:none}
+  td.name{font-weight:600;color:var(--ink)}
+  td.firm,td.sig{color:#2C3A50}
+  .tag{display:inline-block;min-width:30px;text-align:center;font-weight:700;font-size:12.5px;padding:4px 8px;border-radius:6px;background:rgba(46,107,255,.12);color:var(--blue-dark)}
+  .tag.a{background:rgba(74,128,255,.14);color:var(--blue)}
+  .tag.bp{background:rgba(123,163,255,.18);color:var(--blue-2)}
+  .tag.b{background:#EEF2F8;color:var(--muted)}
+  .note{margin-top:14px;color:var(--muted-2);font-size:13px;font-family:var(--mono)}
+
+  /* pricing */
+  .pricing{background:var(--navy-deep);background-image:radial-gradient(800px 400px at 50% 0%,rgba(46,107,255,.18),transparent 68%)}
+  .pricing .wrap{max-width:800px}
+  .pricing .h2,.pricing .lede{text-align:center;color:#fff;max-width:none;margin-left:auto;margin-right:auto}
+  .pricing .lede{color:rgba(255,255,255,.66);margin-bottom:clamp(34px,5vw,50px)}
+  .card{background:#fff;border-radius:18px;padding:clamp(30px,5vw,44px);box-shadow:0 34px 80px rgba(0,0,0,.4)}
+  .price{display:flex;align-items:flex-end;justify-content:center;gap:8px;margin-bottom:6px}
+  .price b{font-size:clamp(46px,7vw,62px);font-weight:700;letter-spacing:-.04em;line-height:1}
+  .price span{color:var(--muted);font-size:17px;padding-bottom:8px}
+  .trial{text-align:center;color:var(--muted-2);font-size:14px;margin-bottom:30px}
+  .rule{height:1px;background:var(--line);margin-bottom:28px}
+  .inc{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);margin-bottom:18px}
+  ul.feat{list-style:none;margin:0 0 32px;padding:0;display:grid;gap:13px}
+  ul.feat li{display:grid;grid-template-columns:20px 1fr;gap:12px;align-items:start;font-size:15.5px;line-height:1.5}
+  ul.feat li i{width:8px;height:8px;margin-top:7px;border-radius:2px;background:var(--blue);display:block}
+  .fine{margin-top:14px;text-align:center;color:var(--muted-2);font-size:13px;line-height:1.5}
+  .quote{margin-top:26px;border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:24px 26px;background:rgba(255,255,255,.04)}
+  .quote p{color:rgba(255,255,255,.8);font-size:16px;line-height:1.6;text-align:center}
+
+  /* footer */
+  footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.08)}
+  .foot{display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between;padding:44px 24px;max-width:1180px;margin:0 auto}
+  .foot a{color:rgba(255,255,255,.68);font-size:15px}
+  .foot a:hover{color:#fff}
+  .foot .copy{color:rgba(255,255,255,.42);font-size:13.5px}
+
+  @media (max-width:760px){
+    nav.links{display:none}
+    .bar{padding:14px 20px}
+    .wrap{padding:0 20px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="logo"><span class="mark"></span>Attorney Scout</div>
+    <nav class="links">
+      <a href="#how">How it works</a>
+      <a href="#grades">Grading</a>
+      <a href="#sample">Sample</a>
+      <a href="#pricing">Pricing</a>
+    </nav>
+    <a class="btn sm" href="https://buy.stripe.com/your-payment-link">Start Free Trial</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap grid">
+    <div>
+      <div class="pill"><span></span><span>Prospect intelligence for legal marketing</span></div>
+      <h1>Know Who to Call Before You Dial</h1>
+      <p class="sub">Attorney Scout automatically grades law firm prospects A through F based on their marketing spend and online presence. Stop cold calling blind. Start calling attorneys already investing in growth — delivered to your Google Sheet every morning.</p>
+      <div class="cta-row">
+        <a class="btn" href="https://buy.stripe.com/your-payment-link">Start Free Trial</a>
+        <a class="ghost" href="#sample">See a Sample List →</a>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><b>This morning's list</b><span class="mono">142 prospects</span></div>
+      <div class="bars">
+        <div class="bar-row"><span class="g">A+</span><span class="track"><span class="fill" style="width:22%"></span></span><span class="n">31</span></div>
+        <div class="bar-row"><span class="g">A</span><span class="track"><span class="fill" style="width:34%;background:#4A80FF"></span></span><span class="n">48</span></div>
+        <div class="bar-row"><span class="g">B+</span><span class="track"><span class="fill" style="width:20%;background:#7BA3FF"></span></span><span class="n">28</span></div>
+        <div class="bar-row"><span class="g">B</span><span class="track"><span class="fill" style="width:15%;background:rgba(255,255,255,.42)"></span></span><span class="n">21</span></div>
+        <div class="bar-row"><span class="g">C+</span><span class="track"><span class="fill" style="width:9%;background:rgba(255,255,255,.24)"></span></span><span class="n">14</span></div>
+      </div>
+      <div class="panel-foot">
+        <div><b>79</b><small>A-grade calls queued</small></div>
+        <div><b>6:00 AM</b><small>Delivered daily</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="how">
+  <div class="wrap">
+    <h2 class="h2">Three Steps to a Better Call List</h2>
+    <p class="lede">Set it up once. It runs every morning without you.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="num">01</div>
+        <h3>Enter Your Markets</h3>
+        <p>You tell Attorney Scout which cities and practice areas to search. Takes 30 seconds.</p>
+      </div>
+      <div class="step">
+        <div class="num">02</div>
+        <h3>We Do the Research</h3>
+        <p>Attorney Scout scans Google Maps, detects marketing signals like Google Ads and chat widgets, and grades every prospect automatically.</p>
+      </div>
+      <div class="step">
+        <div class="num">03</div>
+        <h3>Get Your Call List Every Morning</h3>
+        <p>A prioritized A through F graded prospect list lands in your Google Sheet every morning. Fresh prospects daily. Call your A grades first.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec grades" id="grades">
+  <div class="wrap">
+    <h2 class="h2">Not All Prospects Are Equal</h2>
+    <p class="lede">Every firm gets a grade before it ever reaches your list.</p>
+    <div class="glist">
+      <div class="grade">
+        <div class="letter">A+</div>
+        <div><b>Solo or Managing Partner actively running Google Ads and a chat widget.</b><span class="d">Highest intent buyer.</span></div>
+      </div>
+      <div class="grade g-a">
+        <div class="letter">A</div>
+        <div><b>Solo or Managing Partner running Google Ads.</b><span class="d">Already investing in digital marketing.</span></div>
+      </div>
+      <div class="grade g-bp">
+        <div class="letter">B+</div>
+        <div><b>Solo or Managing Partner with a chat widget.</b><span class="d">Converting traffic, needs more leads.</span></div>
+      </div>
+      <div class="grade g-b">
+        <div class="letter">B</div>
+        <div><b>Solo or Managing Partner with strong Google presence.</b><span class="d">No detected marketing spend yet.</span></div>
+      </div>
+      <div class="grade g-cp">
+        <div class="letter">C+</div>
+        <div><b>Standard Google presence.</b><span class="d">Lower priority but worth a call if time allows.</span></div>
+      </div>
+    </div>
+    <div class="callout">
+      <span class="dot"></span>
+      <p>Attorney Scout detects Google Ads pixels, chat widgets from 20+ providers, and directory profile investments automatically.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="sample">
+  <div class="wrap">
+    <h2 class="h2">Here's What You Get Every Morning</h2>
+    <p class="lede">A live Google Sheet, sorted so your best call is row one.</p>
+    <div class="sheet">
+      <div class="sheet-bar">
+        <span class="dots"><i></i><i></i><i></i></span>
+        <b>Attorney Scout — Daily Prospects</b>
+        <time>Aug 17, 2026 · 6:02 AM</time>
+      </div>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Grade</th><th>Name</th><th>Firm</th><th>Attorneys</th><th>Marketing Signals</th><th>Rating</th><th>Reviews</th><th>Phone</th><th>City</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="tag">A+</span></td>
+              <td class="name">Marcus Delgado</td>
+              <td class="firm">Delgado Injury Law</td>
+              <td class="mono">3</td>
+              <td class="sig">Google Ads, Chat (Smith.ai)</td>
+              <td class="mono">4.8</td><td class="mono">217</td>
+              <td class="mono">(602) 415-8830</td><td>Phoenix, AZ</td>
+            </tr>
+            <tr>
+              <td><span class="tag">A+</span></td>
+              <td class="name">Priya Raghavan</td>
+              <td class="firm">Raghavan Family Law Group</td>
+              <td class="mono">2</td>
+              <td class="sig">Google Ads, Chat (Tidio), Avvo Pro</td>
+              <td class="mono">4.9</td><td class="mono">143</td>
+              <td class="mono">(919) 662-3074</td><td>Raleigh, NC</td>
+            </tr>
+            <tr>
+              <td><span class="tag a">A</span></td>
+              <td class="name">Dwight Ferraro</td>
+              <td class="firm">Ferraro &amp; Boyle LLC</td>
+              <td class="mono">5</td>
+              <td class="sig">Google Ads</td>
+              <td class="mono">4.6</td><td class="mono">89</td>
+              <td class="mono">(216) 348-9915</td><td>Cleveland, OH</td>
+            </tr>
+            <tr>
+              <td><span class="tag bp">B+</span></td>
+              <td class="name">Alicia Brennan</td>
+              <td class="firm">Brennan Estate Planning</td>
+              <td class="mono">1</td>
+              <td class="sig">Chat (Tidio)</td>
+              <td class="mono">5.0</td><td class="mono">61</td>
+              <td class="mono">(503) 771-2248</td><td>Portland, OR</td>
+            </tr>
+            <tr>
+              <td><span class="tag b">B</span></td>
+              <td class="name">Terrence Okafor</td>
+              <td class="firm">Okafor Immigration Law</td>
+              <td class="mono">2</td>
+              <td>None detected</td>
+              <td class="mono">4.7</td><td class="mono">128</td>
+              <td class="mono">(713) 509-6612</td><td>Houston, TX</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="note">Sample data. Your sheet updates in place every morning.</p>
+  </div>
+</section>
+
+<section class="sec pricing" id="pricing">
+  <div class="wrap">
+    <h2 class="h2">Simple Pricing</h2>
+    <p class="lede">One plan. Everything included.</p>
+    <div class="card">
+      <div class="price"><b>$99</b><span>per month</span></div>
+      <p class="trial">Two week free trial. No contracts.</p>
+      <div class="rule"></div>
+      <div class="inc">Everything included</div>
+      <ul class="feat">
+        <li><i></i><span>Daily graded prospect lists delivered every morning</span></li>
+        <li><i></i><span>100 to 150 new prospects per week</span></li>
+        <li><i></i><span>Unlimited markets and practice areas</span></li>
+        <li><i></i><span>Google Sheets delivery</span></li>
+        <li><i></i><span>Marketing signal detection — Google Ads, chat widgets, directory profiles</span></li>
+        <li><i></i><span>Two week free trial</span></li>
+        <li><i></i><span>No contracts, cancel anytime</span></li>
+      </ul>
+      <a class="btn block" href="https://buy.stripe.com/your-payment-link">Start Your Free Trial</a>
+      <p class="fine">First charge after 14 day free trial. Cancel anytime with 7 days notice.</p>
+    </div>
+    <div class="quote"><p>Most legal marketing reps prospect the same 20 attorneys all week. Attorney Scout delivers a fresh prioritized list every morning so your pipeline never runs dry.</p></div>
+  </div>
+</section>
+
+<footer>
+  <div class="foot">
+    <div class="logo"><span class="mark" style="width:20px;height:20px"></span>Attorney Scout</div>
+    <a href="mailto:cole.demaree2017@gmail.com">cole.demaree2017@gmail.com</a>
+    <span class="copy">2026 Attorney Scout. All rights reserved.</span>
+  </div>
+</footer>
+
+</body>
+</html>
