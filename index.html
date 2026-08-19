@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Attorney Scout — Know Who to Call Before You Dial</title>
+<link rel="icon" type="image/svg+xml" href="attorney-scout-icon.svg">
 <meta name="description" content="Attorney Scout grades law firm prospects A through F based on marketing spend and online presence, delivered to your Google Sheet every morning.">
 <style>
   :root{
@@ -30,6 +31,8 @@
   .bar{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:16px 24px;max-width:1180px;margin:0 auto}
   .logo{display:flex;align-items:center;gap:10px;color:#fff;font-size:17px;font-weight:700;letter-spacing:-.02em}
   .mark{width:22px;height:22px;border-radius:6px;background:var(--blue)}
+  .brand{display:flex;align-items:center;line-height:0}
+  .brand svg{display:block;width:160px;height:40px}
   nav.links{display:flex;gap:28px}
   nav.links a{color:rgba(255,255,255,.66);font-size:14px;font-weight:500}
   nav.links a:hover{color:#fff}
@@ -148,7 +151,18 @@
 
 <header>
   <div class="bar">
-    <div class="logo"><span class="mark"></span>Attorney Scout</div>
+    <a class="brand" href="#" aria-label="Attorney Scout">
+      <svg viewBox="0 0 320 80" width="160" height="40" role="img" aria-label="Attorney Scout">
+        <rect width="320" height="80" fill="#FFFFFF"></rect>
+        <g transform="translate(24 16)">
+          <circle cx="24" cy="24" r="15" fill="none" stroke="#0B1C3D" stroke-width="3"></circle>
+          <path d="M24 2v7M24 39v7M2 24h7M39 24h7" stroke="#0B1C3D" stroke-width="3" stroke-linecap="butt"></path>
+          <path d="M24 17v14M17 24h14" stroke="#1F6BFF" stroke-width="3.5" stroke-linecap="butt"></path>
+          <circle cx="38.5" cy="9.5" r="4.5" fill="#1F6BFF"></circle>
+        </g>
+        <text x="88" y="50" font-family="Outfit, Poppins, 'Helvetica Neue', Arial, sans-serif" font-size="27" letter-spacing="-0.32"><tspan font-weight="300" fill="#0B1C3D">Attorney</tspan><tspan font-weight="700" fill="#0B1C3D"> Scout</tspan></text>
+      </svg>
+    </a>
     <nav class="links">
       <a href="#how">How it works</a>
       <a href="#grades">Grading</a>
